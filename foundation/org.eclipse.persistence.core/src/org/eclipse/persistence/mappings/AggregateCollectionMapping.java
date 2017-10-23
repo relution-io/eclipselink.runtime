@@ -2186,10 +2186,8 @@ public class AggregateCollectionMapping extends CollectionMapping implements Rel
      */
     @Override
     public void mergeChangesIntoObject(Object target, ChangeRecord changeRecord, Object source, MergeManager mergeManager, AbstractSession targetSession) {
-        if (this.descriptor.getCachePolicy().isProtectedIsolation()){
-            if (!this.isCacheable && !targetSession.isProtectedSession()){
-                setAttributeValueInObject(target, this.indirectionPolicy.buildIndirectObject(new ValueHolder(null)));
-            }
+        if (this.descriptor.getCachePolicy().isProtectedIsolation()&& !this.isCacheable && !targetSession.isProtectedSession()){
+            setAttributeValueInObject(target, this.indirectionPolicy.buildIndirectObject(new ValueHolder(null)));
             return;
         }
         //Check to see if the target has an instantiated collection
