@@ -41,6 +41,9 @@ public class CommandPropagator implements Runnable {
     /** The command to send */
     protected byte[] commandBytes;
 
+    /** name of command class for logging purposes */
+    protected String commandClassName;
+
     /** Connection to send to */
     protected RemoteConnection connection;
 
@@ -57,8 +60,9 @@ public class CommandPropagator implements Runnable {
     /**
      * Constructor used to create the async propagator threads
      */
-    public CommandPropagator(RemoteCommandManager rcm, Command command, byte[] commandBytes, RemoteConnection connection) {
+    public CommandPropagator(RemoteCommandManager rcm, Command command, byte[] commandBytes, String commandClassName, RemoteConnection connection) {
         this(rcm, command, commandBytes);
+        this.commandClassName = commandClassName;
         this.connection = connection;
     }
 
@@ -99,6 +103,11 @@ public class CommandPropagator implements Runnable {
     public void asynchronousPropagateCommand() {
         // The async logic is in the run() method
         rcm.logDebug("async_propagation", (Object[])null);
+        if (this.commandBytes != null && this.command != null) {
+            // PERF: free up memory occupied by command
+            this.commandClassName = this.command.getClass().getName();
+            this.command = null;
+        }
         this.rcm.getServerPlatform().launchContainerRunnable(this);
     }
 
@@ -107,7 +116,10 @@ public class CommandPropagator implements Runnable {
      * Propagate the command to the specified connection.
      */
     public void propagateCommand(RemoteConnection connection) {
-        Object[] arguments = { command.getClass().getName(), connection.getServiceId() };
+        Object[] arguments = {
+            this.command != null ? this.command.getClass().getName() : commandClassName,
+            connection.getServiceId()
+        };
         rcm.logDebug("propagate_command_to", arguments);
 
         try {
@@ -205,7 +217,7 @@ public class CommandPropagator implements Runnable {
                 // This is the top level thread. We need to spawn off a bunch of async connection threads
                 while (iterator.hasNext()) {
                     RemoteConnection remoteConnection = (RemoteConnection)iterator.next();
-                    CommandPropagator propagator = new CommandPropagator(this.rcm, this.command, this.commandBytes, remoteConnection);
+                    CommandPropagator propagator = new CommandPropagator(this.rcm, this.command, this.commandBytes, this.commandClassName, remoteConnection);
                     this.rcm.getServerPlatform().launchContainerRunnable(propagator);
                 }
             }
