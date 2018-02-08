@@ -161,8 +161,6 @@ public class MetadataMirrorFactory extends MetadataFactory {
                         }
                         metadataClass = new MetadataClass(MetadataMirrorFactory.this, name);
                         addMetadataClass(metadataClass);
-                        element.accept(elementVisitor, metadataClass);
-                        addMetadataClass(metadataClass);
                     } else {
                         // Only thing going to get through at this point are
                         // TypeParameterElements (presumably generic ones). Look
